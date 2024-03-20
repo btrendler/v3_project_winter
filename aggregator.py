@@ -1,8 +1,8 @@
+import numpy as np
 import os.path
 from multiprocessing import Pool
 from pathlib import Path
-
-import numpy as np
+from sklearn.model_selection import train_test_split
 from scipy import stats
 from tqdm import tqdm
 
@@ -36,7 +36,12 @@ IN_FILE_KEYS_LIST = "patients"
 IN_FILE_NIGHT_NUM = "nights"
 IN_FILE_SAMPLE_FREQUENCIES = [100, 1]
 IN_FILE_LABELS_LIST = "labels"
+# Train-test split ratios
+TRAIN_PORTION = 0.5
+TEST_PORTION = 0.3
+VALIDATE_PORTION = 0.2
 # -------------------------------------------------------------------
+assert TRAIN_PORTION + TEST_PORTION + VALIDATE_PORTION == 1.0
 
 
 # -------------------------------------------------------------------
@@ -140,6 +145,7 @@ class Aggregator:
         if save:
             Path("./tmp").mkdir()
 
+        # Load in every file and save out the ones that are not present
         files = []
         for id in tqdm(self.patients):
             for night in range(self.num_nights):
@@ -152,6 +158,7 @@ class Aggregator:
                 except KeyError as e:
                     print(e)
 
+        # Loop through every patient and convert them to the new format
         with Pool(n_proc) as p:
             result = []
             for r in tqdm(p.imap(self.process_person, files), total=len(files)):
@@ -159,13 +166,24 @@ class Aggregator:
 
         # Create the output dictionary
         out = dict()
-        out["patients"] = self.patients
+        out["all_patients"] = self.patients
         out["labels"] = labels
         out["num_nights"] = self.num_nights
 
-        # Save all the people
+        # Save all the people who were successfully converted
         for file, res in zip(files, result):
+            if res is None:
+                continue
             out[file] = res
+
+        # Make a train-test-validate split
+        patients_tv, patients_test = train_test_split(self.patients, test_size=TEST_PORTION)
+        patients_train, patients_validate = train_test_split(patients_tv, test_size=(
+                VALIDATE_PORTION / (VALIDATE_PORTION + TRAIN_PORTION))
+        )
+        out["test_patients"] = patients_test
+        out["train_patients"] = patients_train
+        out["validate_patients"] = patients_validate
 
         # Save the new file
         np.savez(OUT_FILE_NAME, **out)
