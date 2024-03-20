@@ -14,7 +14,7 @@ BLOCK_LENGTH = 10.
 # Note: every column MUST have an aggregator specified, or it will not be passed through to the final data.
 PROCESSORS = [
     ("zeros", ["EEG FPZ-CZ"])
-    # ("fourier", (["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5)),
+    # ("fourier", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5),
     # ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
     # ("mode", ["_HYPNO"])
 ]
@@ -38,24 +38,25 @@ IN_FILE_LABELS_LIST = ["labels"]
 # """
 # A data aggregator.
 # :param mat: The list of matrices to process, or none if the overarching aggregator is requesting labels for values
-# :param labels: The list of original column labels
-# :param options: The options with which to run this aggregator
+# :param labels: The list of lists of column labels - the lists in the outer array correspond to the frequencies
+# :param options: The options with which to run this aggregator - first option is always which columns to apply to.
 # :return: A tuple containing the found values, or labels for the found values if mat is None
 # """
 #
 # -------------------------------------------------------------------
 class Processor:
     @staticmethod
-    def fourier(mats: list[np.ndarray] | None, labels: list[str], options: int | None = None):
+    def fourier(mats: list[np.ndarray] | None, labels: list[list[str]], options: list):
         # TODO
         ...
 
     @staticmethod
-    def mean(mats: list[np.ndarray] | None, labels: list[str], options: None = None):
-        return [np.mean(m, axis=0) for m in mats]
+    def mean(mats: list[np.ndarray] | None, labels: list[str], options: list):
+        # TODO
+        ...
 
     @staticmethod
-    def mode(mats: list[np.ndarray] | None, labels: list[str], options: None = None):
+    def mode(mats: list[np.ndarray] | None, labels: list[str], options: list):
         # TODO
         ...
 
