@@ -52,8 +52,7 @@ class Processor:
 
     @staticmethod
     def mean(mats: list[np.ndarray] | None, labels: list[str], options: None = None):
-        # TODO
-        ...
+        return [np.mean(m, axis=0) for m in mats]
 
     @staticmethod
     def mode(mats: list[np.ndarray] | None, labels: list[str], options: None = None):
