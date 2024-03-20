@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import stats
 
 # -------------------------------------------------------------------
 # Configuration Options:
@@ -29,7 +30,21 @@ IN_FILE_NAME = "sleep-cassette.npz"
 IN_FILE_KEYS_LIST = "patients"
 IN_FILE_SAMPLE_FREQUENCIES = [100, 1]
 IN_FILE_LABELS_LIST = ["labels"]
+
+
 # -------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------
+# Utility Functions
+# -------------------------------------------------------------------
+def find_tuple_index(array: list[list[str]], value: str):
+    for i in range(len(array)):
+        try:
+            return i, array[i].index(value)
+        except ValueError:
+            continue
+    raise ValueError("Entry not found in 2D string list")
 
 
 # -------------------------------------------------------------------
@@ -51,18 +66,33 @@ class Processor:
         ...
 
     @staticmethod
-    def mean(mats: list[np.ndarray] | None, labels: list[str], options: list):
+    def mean(mats: list[np.ndarray] | None, labels: list[list[str]], options: list):
         # TODO
         ...
 
     @staticmethod
-    def mode(mats: list[np.ndarray] | None, labels: list[str], options: list):
-        # TODO
-        ...
+    def mode(mats: list[np.ndarray] | None, labels: list[list[str]], options: list):
+        # Read in the options
+        targets, = options
+
+        # Check if we're retrieving the post-processing labels
+        if mats is None:
+            return [target + "-Mean" for target in targets]
+
+        # Process the targets, in order - this order MUST NOT CHANGE between the post-processing labels being returned,
+        #  and the values being computed.
+        out = []
+        for target in targets:
+            # Get the frequency index & column index
+            freq_idx, label_col = find_tuple_index(labels, target)
+            # Append the mode
+            out.append(stats.mode(mats[freq_idx][:, label_col])[0])
+
+        # Return the found values. Can be a list or an ndarray.
+        return out
 
     @staticmethod
-    def zeros(mats: list[np.ndarray] | None, labels: list[str], options: int | None = None):
-        print("hallo")
+    def zeros(mats: list[np.ndarray] | None, labels: list[str], options: list):
         return np.zeros(3)
 
 
@@ -75,6 +105,9 @@ class Aggregator:
         # Load in the npz file
         self.in_file = np.load(IN_FILE_NAME)
         self._processors = [(getattr(Processor, name), options) for name, options in PROCESSORS]
+
+        # Determine the labels for each frequency
+        self.labels = None
 
     def process_all(self, n_proc=24):
         self.process_person("SC4801")
@@ -98,12 +131,12 @@ class Aggregator:
             for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES):
                 start_index = int(freq * start)
                 end_index = int(start_index + freq * BLOCK_LENGTH)
-                mats_seg.append(mat[start_index:end_index,:])
+                mats_seg.append(mat[start_index:end_index, :])
 
             # Call each processor on the found segments
             vectors = []
             for func, opts in self._processors:
-                vectors.append(func(mats_seg, *(opts if type(opts) is tuple else tuple(opts))))
+                vectors.append(func(mats_seg, self.labels, *opts[1:]))
             entry_out.append(np.concatenate(vectors))
 
         # Return the aggregated data, as an array
