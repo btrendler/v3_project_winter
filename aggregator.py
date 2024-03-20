@@ -45,17 +45,17 @@ IN_FILE_LABELS_LIST = ["labels"]
 # -------------------------------------------------------------------
 class Processor:
     @staticmethod
-    def fourier(mats: list[np.ndarray] | None, labels: list[str], options: tuple[list[str], int]):
+    def fourier(mats: list[np.ndarray] | None, labels: list[str], options: int | None = None):
         # TODO
         ...
 
     @staticmethod
-    def mean(mats: list[np.ndarray] | None, labels: list[str], options: tuple[list[str], int]):
+    def mean(mats: list[np.ndarray] | None, labels: list[str], options: None = None):
         # TODO
         ...
 
     @staticmethod
-    def mode(mats: list[np.ndarray] | None, labels: list[str], options: tuple[list[str], int]):
+    def mode(mats: list[np.ndarray] | None, labels: list[str], options: None = None):
         # TODO
         ...
 
@@ -68,6 +68,7 @@ class Aggregator:
     def __init__(self):
         # Load in the npz file
         self.in_file = np.load(IN_FILE_NAME)
+        self._processors = [(getattr(Processor, name), options) for name, options in PROCESSORS]
 
     def process_all(self, n_proc=24):
         self.process_person("SC4801")
@@ -80,8 +81,21 @@ class Aggregator:
         seconds = max(mat.shape[0] / freq for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES))
         segments = np.arange(0., seconds, BLOCK_LENGTH)
 
-        # Call each processor
+        # Loop through the segments
+        for start in segments:
+            # If there isn't enough data left, return
+            if start + BLOCK_LENGTH > seconds:
+                break
+            # Get the segments
+            mats_seg = []
+            for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES):
+                start_index = int(freq * start)
+                end_index = int(start_index + BLOCK_LENGTH)
+                mats_seg.append(mats[start_index:end_index,:])
 
+            # Call each processor on the found segments
+            # for func, opts in self._processors:
+            #     func(mats_seg, , opts)
 
 
 
@@ -89,9 +103,9 @@ class Aggregator:
 
 
 if __name__ == "__main__":
-    agg = Aggregator()
-    agg.process_all()
-    # file = np.load("sleep-cassette.npz")
-    # print(list(file.keys()))
-    # print(file["labels-100hz"])
-    # print(file["labels-1hz"])
+    # agg = Aggregator()
+    # agg.process_all()
+    file = np.load("sleep-cassette.npz")
+    print(list(file.keys()))
+    print(file["labels-100hz"])
+    print(file["labels-1hz"])
