@@ -205,26 +205,29 @@ class Aggregator:
 
         # Create the output dictionary
         out = dict()
-        out["all_patients"] = self.patients
         out["labels"] = labels
         out["num_nights"] = self.num_nights
 
         # Save all the people who were successfully converted
+        patients_included = []
         for file, res in zip(files, result):
             if res is None:
                 continue
             out[file] = res
+            patients_included.append(file)
 
         # Make a train-test-validate split
-        patients_tv, patients_test = train_test_split(self.patients, test_size=TEST_PORTION)
+        patients_tv, patients_test = train_test_split(patients_included, test_size=TEST_PORTION)
         patients_train, patients_validate = train_test_split(patients_tv, test_size=(
                 VALIDATE_PORTION / (VALIDATE_PORTION + TRAIN_PORTION)))
+        out["all_patients"] = patients_included
         out["test_patients"] = patients_test
         out["train_patients"] = patients_train
         out["validate_patients"] = patients_validate
 
         # Save the new file
         np.savez_compressed(OUT_FILE_NAME, **out)
+        print(f"Finished export of {len(patients_included)} patient night data groups.")
 
     @staticmethod
     def process_person(file):
