@@ -1,3 +1,5 @@
+from itertools import groupby
+
 import numpy as np
 import os.path
 from multiprocessing import Pool
@@ -206,7 +208,6 @@ class Aggregator:
         # Create the output dictionary
         out = dict()
         out["labels"] = labels
-        out["num_nights"] = self.num_nights
 
         # Save all the people who were successfully converted
         patients_included = []
@@ -217,13 +218,15 @@ class Aggregator:
             patients_included.append(file)
 
         # Make a train-test-validate split
+        patients_included = [(v[:5], v[5:]) for v in patients_included]
+        patients_included = [[k for k in v] for _, v in groupby(patients_included, lambda v: v[0])]
         patients_tv, patients_test = train_test_split(patients_included, test_size=TEST_PORTION)
         patients_train, patients_validate = train_test_split(patients_tv, test_size=(
                 VALIDATE_PORTION / (VALIDATE_PORTION + TRAIN_PORTION)))
-        out["all_patients"] = patients_included
-        out["test_patients"] = patients_test
-        out["train_patients"] = patients_train
-        out["validate_patients"] = patients_validate
+        out["all_patients"] = [f"{v[0]}{v[1]}" for vs in patients_included for v in vs]
+        out["test_patients"] = [f"{v[0]}{v[1]}" for vs in patients_test for v in vs]
+        out["train_patients"] = [f"{v[0]}{v[1]}" for vs in patients_train for v in vs]
+        out["validate_patients"] = [f"{v[0]}{v[1]}" for vs in patients_validate for v in vs]
 
         # Save the new file
         np.savez_compressed(OUT_FILE_NAME, **out)
