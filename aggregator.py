@@ -3,7 +3,7 @@ import os.path
 from multiprocessing import Pool
 from pathlib import Path
 from sklearn.model_selection import train_test_split
-from scipy import stats
+from scipy import stats, fft
 from tqdm import tqdm
 
 # -------------------------------------------------------------------
@@ -19,10 +19,10 @@ BLOCK_LENGTH = 10.
 # Additional processors can be programmed in the next section.
 # Note: every column MUST have an aggregator specified, or it will not be passed through to the final data.
 PROCESSORS = [
-    ("zeros", 15)
-    # ("fourier", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5),
-    # ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
-    # ("mode", ["_HYPNO"])
+    # ("zeros", 15)
+    ("fourier", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5),
+    ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
+    ("mode", ["_HYPNO"])
 ]
 # The label for the dependent variable
 DEPENDENT_LABEL = "_HYPNO"
@@ -71,13 +71,50 @@ def find_tuple_index(array: list[list[str]], value: str):
 class Processor:
     @staticmethod
     def fourier(mats: list[np.ndarray] | None, labels: list[list[str]], options: list):
-        # TODO
-        ...
+        # Read in the options
+        targets, freq_count, = options
+
+        # Handle retrieval of post-processing labels
+        if mats is None:
+            return [f"{target}-freq{num}" for target in targets for num in range(freq_count)]
+
+        # Process the targets, in order
+        out = []
+        for target in targets:
+            # Get the frequency index & column index, then extract the column
+            freq_idx, label_col = find_tuple_index(labels, target)
+            col = mats[freq_idx][:,label_col]
+            # Take the FFT of the column
+            fft_res = fft.rfft(col)
+            fft_res_freq = fft.fftfreq(len(col), d=1./IN_FILE_SAMPLE_FREQUENCIES[freq_idx])
+            # Get the peak signals
+            top_signals = np.argsort(np.abs(fft_res))[::-1]
+            top_signals = top_signals[:freq_count]
+            # Append each of the maximum values
+            out.extend(fft_res_freq[top_signals])
+
+        # Return the found values
+        return out
 
     @staticmethod
     def mean(mats: list[np.ndarray] | None, labels: list[list[str]], options: list):
-        # TODO
-        ...
+        # Read in the options
+        targets, = options
+
+        # Handle retrieval of post-processing labels
+        if mats is None:
+            return [target + "-mean" for target in targets]
+
+        # Process the targets, in order
+        out = []
+        for target in targets:
+            # Get the frequency index & column index
+            freq_idx, label_col = find_tuple_index(labels, target)
+            # Append the mean
+            out.append(np.mean(mats[freq_idx][:, label_col]))
+
+        # Return the found values.
+        return out
 
     @staticmethod
     def mode(mats: list[np.ndarray] | None, labels: list[list[str]], options: list):
@@ -86,7 +123,7 @@ class Processor:
 
         # Check if we're retrieving the post-processing labels
         if mats is None:
-            return [target + "-Mean" for target in targets]
+            return [target + "-mode" for target in targets]
 
         # Process the targets, in order - this order MUST NOT CHANGE between the post-processing labels being returned,
         #  and the values being computed.
@@ -130,7 +167,7 @@ class Aggregator:
         self.in_file = np.load(IN_FILE_NAME)
 
         # Determine the labels for each frequency, and the patients
-        labels = [self.in_file[f"{IN_FILE_LABELS_LIST}-{freq}hz"] for freq in IN_FILE_SAMPLE_FREQUENCIES]
+        labels = [list(self.in_file[f"{IN_FILE_LABELS_LIST}-{freq}hz"]) for freq in IN_FILE_SAMPLE_FREQUENCIES]
         self.patients = self.in_file[IN_FILE_KEYS_LIST]
         self.num_nights = self.in_file[IN_FILE_NIGHT_NUM]
 
@@ -138,7 +175,7 @@ class Aggregator:
         # Determine the new output structure
         labels = []
         for func, opts in _processors:
-            labels.append(func(None, labels, opts))
+            labels.extend(func(None, labels, opts))
 
         # Create a new directory, if it does not exist, and save all the files out
         save = not os.path.exists("./tmp")
@@ -147,7 +184,8 @@ class Aggregator:
 
         # Load in every file and save out the ones that are not present
         files = []
-        for id in tqdm(self.patients):
+        for id in (prog := tqdm(self.patients)):
+            prog.set_description("Saving out patients...")
             for night in range(self.num_nights):
                 try:
                     if save:
@@ -161,7 +199,8 @@ class Aggregator:
         # Loop through every patient and convert them to the new format
         with Pool(n_proc) as p:
             result = []
-            for r in tqdm(p.imap(self.process_person, files), total=len(files)):
+            for r in (prog := tqdm(p.imap(self.process_person, files), total=len(files))):
+                prog.set_description("Processing patients...")
                 result.append(r)
 
         # Create the output dictionary
@@ -179,14 +218,13 @@ class Aggregator:
         # Make a train-test-validate split
         patients_tv, patients_test = train_test_split(self.patients, test_size=TEST_PORTION)
         patients_train, patients_validate = train_test_split(patients_tv, test_size=(
-                VALIDATE_PORTION / (VALIDATE_PORTION + TRAIN_PORTION))
-        )
+                VALIDATE_PORTION / (VALIDATE_PORTION + TRAIN_PORTION)))
         out["test_patients"] = patients_test
         out["train_patients"] = patients_train
         out["validate_patients"] = patients_validate
 
         # Save the new file
-        np.savez(OUT_FILE_NAME, **out)
+        np.savez_compressed(OUT_FILE_NAME, **out)
 
     @staticmethod
     def process_person(file):
@@ -226,12 +264,3 @@ class Aggregator:
 if __name__ == "__main__":
     agg = Aggregator()
     agg.process_all()
-
-    # file = np.load("sleep-cassette-aggregate.npz")
-    # print(list(file.keys()))
-    # print(file["labels"])
-    # print(file["patients"])
-    # print(file["SC4711"])
-    # print(file["patients"])
-    # print(file["labels-100hz"])
-    # print(file["labels-1hz"])
