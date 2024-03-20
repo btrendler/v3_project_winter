@@ -13,9 +13,10 @@ BLOCK_LENGTH = 10.
 # Additional processors can be programmed in the next section.
 # Note: every column MUST have an aggregator specified, or it will not be passed through to the final data.
 PROCESSORS = [
-    ("fourier", (["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5)),
-    ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
-    ("mode", ["_HYPNO"])
+    ("zeros", ["EEG FPZ-CZ"])
+    # ("fourier", (["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5)),
+    # ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
+    # ("mode", ["_HYPNO"])
 ]
 # The label for the dependent variable
 DEPENDENT_LABEL = "_HYPNO"
@@ -59,6 +60,11 @@ class Processor:
         # TODO
         ...
 
+    @staticmethod
+    def zeros(mats: list[np.ndarray] | None, labels: list[str], options: int | None = None):
+        print("hallo")
+        return np.zeros(3)
+
 
 # -------------------------------------------------------------------
 # Main Aggregator
@@ -82,6 +88,7 @@ class Aggregator:
         segments = np.arange(0., seconds, BLOCK_LENGTH)
 
         # Loop through the segments
+        entry_out = []
         for start in segments:
             # If there isn't enough data left, return
             if start + BLOCK_LENGTH > seconds:
@@ -90,22 +97,23 @@ class Aggregator:
             mats_seg = []
             for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES):
                 start_index = int(freq * start)
-                end_index = int(start_index + BLOCK_LENGTH)
-                mats_seg.append(mats[start_index:end_index,:])
+                end_index = int(start_index + freq * BLOCK_LENGTH)
+                mats_seg.append(mat[start_index:end_index,:])
 
             # Call each processor on the found segments
-            # for func, opts in self._processors:
-            #     func(mats_seg, , opts)
+            vectors = []
+            for func, opts in self._processors:
+                vectors.append(func(mats_seg, *(opts if type(opts) is tuple else tuple(opts))))
+            entry_out.append(np.concatenate(vectors))
 
-
-
-
+        # Return the aggregated data, as an array
+        return np.array(entry_out)
 
 
 if __name__ == "__main__":
-    # agg = Aggregator()
-    # agg.process_all()
-    file = np.load("sleep-cassette.npz")
-    print(list(file.keys()))
-    print(file["labels-100hz"])
-    print(file["labels-1hz"])
+    agg = Aggregator()
+    agg.process_all()
+    # file = np.load("sleep-cassette.npz")
+    # print(list(file.keys()))
+    # print(file["labels-100hz"])
+    # print(file["labels-1hz"])
