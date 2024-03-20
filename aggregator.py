@@ -1,5 +1,10 @@
+import os.path
+from multiprocessing import Pool
+from pathlib import Path
+
 import numpy as np
 from scipy import stats
+from tqdm import tqdm
 
 # -------------------------------------------------------------------
 # Configuration Options:
@@ -14,7 +19,7 @@ BLOCK_LENGTH = 10.
 # Additional processors can be programmed in the next section.
 # Note: every column MUST have an aggregator specified, or it will not be passed through to the final data.
 PROCESSORS = [
-    ("zeros", ["EEG FPZ-CZ"])
+    ("zeros", 15)
     # ("fourier", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5),
     # ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
     # ("mode", ["_HYPNO"])
@@ -28,10 +33,9 @@ OUT_FILE_NAME = "sleep-cassette-aggregate.npz"
 IN_FILE_NAME = "sleep-cassette.npz"
 # Labels for entries in the npz file
 IN_FILE_KEYS_LIST = "patients"
+IN_FILE_NIGHT_NUM = "nights"
 IN_FILE_SAMPLE_FREQUENCIES = [100, 1]
-IN_FILE_LABELS_LIST = ["labels"]
-
-
+IN_FILE_LABELS_LIST = "labels"
 # -------------------------------------------------------------------
 
 
@@ -91,9 +95,23 @@ class Processor:
         # Return the found values. Can be a list or an ndarray.
         return out
 
+    # This is just here for testing.
     @staticmethod
-    def zeros(mats: list[np.ndarray] | None, labels: list[str], options: list):
-        return np.zeros(3)
+    def zeros(mats: list[np.ndarray] | None, _: list[str], options: list):
+        # Read in the options
+        dim, = options
+
+        # Check if we're retrieving the post-processing labels
+        if mats is None:
+            return [f"zero-{i}" for i in range(dim)]
+
+        # Return zeros of the right dimension
+        return np.zeros(dim)
+
+
+# Set up the processors
+_processors = [(getattr(Processor, details[0]), details[1:]) for details in PROCESSORS]
+labels = None
 
 
 # -------------------------------------------------------------------
@@ -102,51 +120,100 @@ class Processor:
 # -------------------------------------------------------------------
 class Aggregator:
     def __init__(self):
+        global labels
         # Load in the npz file
         self.in_file = np.load(IN_FILE_NAME)
-        self._processors = [(getattr(Processor, name), options) for name, options in PROCESSORS]
 
-        # Determine the labels for each frequency
-        self.labels = None
+        # Determine the labels for each frequency, and the patients
+        labels = [self.in_file[f"{IN_FILE_LABELS_LIST}-{freq}hz"] for freq in IN_FILE_SAMPLE_FREQUENCIES]
+        self.patients = self.in_file[IN_FILE_KEYS_LIST]
+        self.num_nights = self.in_file[IN_FILE_NIGHT_NUM]
 
     def process_all(self, n_proc=24):
-        self.process_person("SC4801")
+        # Determine the new output structure
+        labels = []
+        for func, opts in _processors:
+            labels.append(func(None, labels, opts))
 
-    def process_person(self, id):
-        # Get the arrays for each frequency
-        mats = [self.in_file[f"{id}-{freq}HZ"] for freq in IN_FILE_SAMPLE_FREQUENCIES]
+        # Create a new directory, if it does not exist, and save all the files out
+        save = not os.path.exists("./tmp")
+        if save:
+            Path("./tmp").mkdir()
 
-        # Determine the number of seconds in this sample & the segment divisions
-        seconds = max(mat.shape[0] / freq for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES))
-        segments = np.arange(0., seconds, BLOCK_LENGTH)
+        files = []
+        for id in tqdm(self.patients):
+            for night in range(self.num_nights):
+                try:
+                    if save:
+                        for freq in IN_FILE_SAMPLE_FREQUENCIES:
+                            name = f"{id}{night + 1}-{freq}HZ"
+                            np.save(f"./tmp/{name}", self.in_file[name])
+                    files.append(f"{id}{night + 1}")
+                except KeyError as e:
+                    print(e)
 
-        # Loop through the segments
-        entry_out = []
-        for start in segments:
-            # If there isn't enough data left, return
-            if start + BLOCK_LENGTH > seconds:
-                break
-            # Get the segments
-            mats_seg = []
-            for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES):
-                start_index = int(freq * start)
-                end_index = int(start_index + freq * BLOCK_LENGTH)
-                mats_seg.append(mat[start_index:end_index, :])
+        with Pool(n_proc) as p:
+            result = []
+            for r in tqdm(p.imap(self.process_person, files), total=len(files)):
+                result.append(r)
 
-            # Call each processor on the found segments
-            vectors = []
-            for func, opts in self._processors:
-                vectors.append(func(mats_seg, self.labels, *opts[1:]))
-            entry_out.append(np.concatenate(vectors))
+        # Create the output dictionary
+        out = dict()
+        out["patients"] = self.patients
+        out["labels"] = labels
+        out["num_nights"] = self.num_nights
 
-        # Return the aggregated data, as an array
-        return np.array(entry_out)
+        # Save all the people
+        for file, res in zip(files, result):
+            out[file] = res
+
+        # Save the new file
+        np.savez(OUT_FILE_NAME, **out)
+
+    @staticmethod
+    def process_person(file):
+        try:
+            # Get the arrays for each frequency
+            mats = [np.load(f"./tmp/{file}-{freq}HZ.npy") for freq in IN_FILE_SAMPLE_FREQUENCIES]
+
+            # Determine the number of seconds in this sample & the segment divisions
+            seconds = max(mat.shape[0] / freq for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES))
+            segments = np.arange(0., seconds, BLOCK_LENGTH)
+
+            # Loop through the segments
+            entry_out = []
+            for start in segments:
+                # If there isn't enough data left, return
+                if start + BLOCK_LENGTH > seconds:
+                    break
+                # Get the segments
+                mats_seg = []
+                for mat, freq in zip(mats, IN_FILE_SAMPLE_FREQUENCIES):
+                    start_index = int(freq * start)
+                    end_index = int(start_index + freq * BLOCK_LENGTH)
+                    mats_seg.append(mat[start_index:end_index, :])
+
+                # Call each processor on the found segments
+                vectors = []
+                for func, opts in _processors:
+                    vectors.append(func(mats_seg, labels, opts))
+                entry_out.append(np.concatenate(vectors))
+
+            # Return the aggregated data, as an array
+            return np.array(entry_out)
+        except FileNotFoundError:
+            return None
 
 
 if __name__ == "__main__":
     agg = Aggregator()
     agg.process_all()
-    # file = np.load("sleep-cassette.npz")
+
+    # file = np.load("sleep-cassette-aggregate.npz")
     # print(list(file.keys()))
+    # print(file["labels"])
+    # print(file["patients"])
+    # print(file["SC4711"])
+    # print(file["patients"])
     # print(file["labels-100hz"])
     # print(file["labels-1hz"])
