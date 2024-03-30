@@ -8,11 +8,13 @@ from sklearn.model_selection import train_test_split
 from scipy import stats, fft
 from tqdm import tqdm
 
+from split_npz import SplitNPZ
+
 # -------------------------------------------------------------------
 # Configuration Options:
 # -------------------------------------------------------------------
 # Number of seconds per data block
-BLOCK_LENGTH = 10.
+BLOCK_LENGTH = 30.
 # The processor to use for each data block. Valid keys are:
 # - fourier: Do the fourier transform on the data. Options are a tuple, containing the list of columns to apply to and
 #     the number of peak wavelengths to identify
@@ -22,16 +24,18 @@ BLOCK_LENGTH = 10.
 # Note: every column MUST have an aggregator specified, or it will not be passed through to the final data.
 PROCESSORS = [
     # ("zeros", 15)
-    ("fourier", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL", "EMG SUBMENTAL"], 5),
+    ("fourier_seg", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL"], 40),
+    ("fourier_seg", ["EMG SUBMENTAL"], 5),
     ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
     ("mode", ["_HYPNO"])
 ]
 # The label for the dependent variable
 DEPENDENT_LABEL = "_HYPNO"
 # How to handle data blocks where the dependent variable takes multiple values; valid options are 'withhold', 'ignore'
-#DEPENDENT_CHANGE_METHOD = "withhold"
+# DEPENDENT_CHANGE_METHOD = "withhold"
 # Input and output file names
-OUT_FILE_NAME = "sleep-cassette-aggregate.npz"
+OUT_FILE_NAME = lambda n: f"sleep-cassette-aggregate-seg{n}.npz"
+OUT_FILE_ENTRIES_PER_FILE = 20
 IN_FILE_NAME = "sleep-cassette.npz"
 # Labels for entries in the npz file
 IN_FILE_KEYS_LIST = "patients"
@@ -113,7 +117,7 @@ class Processor:
 
         # Find the frequencies the FFT will identify
         sample_interval = 1. / IN_FILE_SAMPLE_FREQUENCIES[group_freq]
-        frequencies = fft.rfftfreq(segment_size, sample_interval)
+        frequencies = fft.rfftfreq(segment_size, sample_interval)[1:]
 
         # Handle retrieval of post-processing labels
         if mats is None:
@@ -131,7 +135,7 @@ class Processor:
             seg_idx = 0
             while len(segment := col[seg_idx:(seg_idx + segment_size)]) == segment_size:
                 # Store the fft, and increment the segment index
-                segment_ffts.append(fft.rfft(segment))
+                segment_ffts.append(fft.rfft(segment)[1:])
                 seg_idx += segment_size
             # Take the mean of the segment FFTs and append it
             out.extend(np.mean(segment_ffts, axis=0))
@@ -216,9 +220,9 @@ class Aggregator:
 
     def process_all(self, n_proc=24):
         # Determine the new output structure
-        labels = []
+        new_labels = []
         for func, opts in _processors:
-            labels.extend(func(None, labels, opts))
+            new_labels.extend(func(None, labels, opts))
 
         # Create a new directory, if it does not exist, and save all the files out
         save = not os.path.exists("./tmp")
@@ -248,7 +252,7 @@ class Aggregator:
 
         # Create the output dictionary
         out = dict()
-        out["labels"] = labels
+        out["labels"] = new_labels
 
         # Save all the people who were successfully converted
         patients_included = []
@@ -270,7 +274,7 @@ class Aggregator:
         out["validate_patients"] = [f"{v[0]}{v[1]}" for vs in patients_validate for v in vs]
 
         # Save the new file
-        np.savez_compressed(OUT_FILE_NAME, **out)
+        SplitNPZ.save(OUT_FILE_NAME, **out)
         print(f"Finished export of {len(patients_included)} patient night data groups.")
 
     @staticmethod
