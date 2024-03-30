@@ -29,7 +29,7 @@ PROCESSORS = [
 # The label for the dependent variable
 DEPENDENT_LABEL = "_HYPNO"
 # How to handle data blocks where the dependent variable takes multiple values; valid options are 'withhold', 'ignore'
-DEPENDENT_CHANGE_METHOD = "withhold"
+#DEPENDENT_CHANGE_METHOD = "withhold"
 # Input and output file names
 OUT_FILE_NAME = "sleep-cassette-aggregate.npz"
 IN_FILE_NAME = "sleep-cassette.npz"
@@ -94,6 +94,47 @@ class Processor:
             top_signals = top_signals[:freq_count]
             # Append each of the maximum values
             out.extend(fft_res_freq[top_signals])
+
+        # Return the found values
+        return out
+
+    @staticmethod
+    def fourier_seg(mats: list[np.ndarray] | None, labels: list[list[str]], options: list):
+        # Read in the options
+        targets, segment_size = options
+
+        # Check that every value has the same frequency
+        group_freq = None
+        for target in targets:
+            freq_idx, _ = find_tuple_index(labels, target)
+            if group_freq is None:
+                group_freq = freq_idx
+            assert group_freq == freq_idx
+
+        # Find the frequencies the FFT will identify
+        sample_interval = 1. / IN_FILE_SAMPLE_FREQUENCIES[group_freq]
+        frequencies = fft.rfftfreq(segment_size, sample_interval)
+
+        # Handle retrieval of post-processing labels
+        if mats is None:
+            return [f"{target}-{f}hz" for target in targets for f in frequencies]
+
+        # Process the targets, in order
+        out = []
+        for target in targets:
+            # Get the frequency index & column index, then extract the column
+            freq_idx, label_col = find_tuple_index(labels, target)
+            col = mats[freq_idx][:,label_col]
+            # Set up an array to store the FFT of every segment
+            segment_ffts = []
+            # Loop through the segments, stacking them into an array
+            seg_idx = 0
+            while len(segment := col[seg_idx:(seg_idx + segment_size)]) == segment_size:
+                # Store the fft, and increment the segment index
+                segment_ffts.append(fft.rfft(segment))
+                seg_idx += segment_size
+            # Take the mean of the segment FFTs and append it
+            out.extend(np.mean(segment_ffts, axis=0))
 
         # Return the found values
         return out
