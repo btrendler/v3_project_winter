@@ -34,8 +34,7 @@ DEPENDENT_LABEL = "_HYPNO"
 # How to handle data blocks where the dependent variable takes multiple values; valid options are 'withhold', 'ignore'
 # DEPENDENT_CHANGE_METHOD = "withhold"
 # Input and output file names
-OUT_FILE_NAME = lambda n: f"sleep-cassette-aggregate-seg{n}.npz"
-OUT_FILE_ENTRIES_PER_FILE = 20
+OUT_FILE_NAME = lambda n: f"sc-agg-f16.npz"
 IN_FILE_NAME = "sleep-cassette.npz"
 # Labels for entries in the npz file
 IN_FILE_KEYS_LIST = "patients"
@@ -135,7 +134,7 @@ class Processor:
             seg_idx = 0
             while len(segment := col[seg_idx:(seg_idx + segment_size)]) == segment_size:
                 # Store the fft, and increment the segment index
-                segment_ffts.append(fft.rfft(segment)[1:])
+                segment_ffts.append(np.abs(fft.rfft(segment)[1:]))
                 seg_idx += segment_size
             # Take the mean of the segment FFTs and append it
             out.extend(np.mean(segment_ffts, axis=0))
@@ -274,7 +273,7 @@ class Aggregator:
         out["validate_patients"] = [f"{v[0]}{v[1]}" for vs in patients_validate for v in vs]
 
         # Save the new file
-        SplitNPZ.save(OUT_FILE_NAME, **out)
+        SplitNPZ.save(OUT_FILE_NAME, per_file=1., **out)
         print(f"Finished export of {len(patients_included)} patient night data groups.")
 
     @staticmethod
@@ -304,10 +303,10 @@ class Aggregator:
                 vectors = []
                 for func, opts in _processors:
                     vectors.append(func(mats_seg, labels, opts))
-                entry_out.append(np.concatenate(vectors))
+                entry_out.append(np.real(np.concatenate(vectors)))
 
             # Return the aggregated data, as an array
-            return np.array(entry_out)
+            return np.array(entry_out, dtype=np.float16)
         except FileNotFoundError:
             return None
 
