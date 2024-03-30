@@ -24,7 +24,7 @@ class SplitNPZ:
         return False
 
     @staticmethod
-    def save(filename, per_file=0.15, **kwargs):
+    def save(filename, per_file=0.3, **kwargs):
         # Determine the number per file
         file_size = int(len(kwargs) * per_file) if type(per_file) is float else per_file
         # Group into each of the save files, and write out
