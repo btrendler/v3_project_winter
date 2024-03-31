@@ -117,7 +117,7 @@ def make_2d_group_plot(files_in, y_file_in, file_out, suptitle, titles, dimensio
         plt.scatter(*x.T, c=y, cmap="rainbow", marker=".")
     plt.suptitle(suptitle)
     plt.tight_layout()
-    plt.savefig(f"figures/proj-{file_out}.pdf")
+    plt.savefig(f"figures/proj-{file_out}.png")
     plt.show()
 
 
@@ -131,7 +131,7 @@ def make_2d_plot(file_in, y_file_in, title, dimensions):
     plt.title(title)
     plt.scatter(*X.T, c=y, cmap="rainbow", marker=".")
     plt.tight_layout()
-    plt.savefig(f"figures/proj-{file_in}.pdf")
+    plt.savefig(f"figures/proj-{file_in}.png")
     plt.show()
 
 
@@ -146,7 +146,7 @@ def make_3d_plot(file_in, y_file_in, title, dimensions):
     ax.scatter(*X.T, c=y, cmap="rainbow", marker=".")
     plt.title(title)
     plt.tight_layout()
-    plt.savefig(f"figures/proj-{file_in}.pdf")
+    plt.savefig(f"figures/proj-{file_in}.png")
     plt.show()
 
 
@@ -168,7 +168,7 @@ def make_4d_plot(file_in, y_file_in, title, dimensions):
     plt.scatter(*X.T[[0, 3]], c=y, cmap="rainbow", marker=".")
     plt.suptitle(title)
     plt.tight_layout()
-    plt.savefig(f"figures/proj-{file_in}.pdf")
+    plt.savefig(f"figures/proj-{file_in}.png")
     plt.show()
 
 
