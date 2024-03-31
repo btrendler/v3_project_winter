@@ -173,7 +173,7 @@ def make_4d_plot(file_in, y_file_in, title, dimensions):
 
 
 if __name__ == "__main__":
-    SIZE_FACTOR = 3
+    SIZE_FACTOR = 2
     #make_projections()
 
     # Make the TSNE plot
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     make_2d_plot("umap_sup_2d_grid_test", "y_test", "Supervised UMAP in 2D\n(Test data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
 
     # Make the 3D UMAP figures
-    make_3d_plot("umap_unsup_3d", "y_part", "Unsupervised UMAP in 3D\n(10% of training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    make_3d_plot("umap_unsup_3d", "y_part", "Unsupervised UMAP in 3D\n(50 neighbors, default params)\n(10% of training data)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
     make_3d_plot("umap_sup_3d_def", "y_part", "Supervised UMAP in 3D\n(10% of training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
     make_3d_plot("umap_sup_3d_grid", "y_part", "Supervised UMAP in 3D\n(10% of training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
     make_3d_plot("umap_sup_3d_def_full", "y_full", "Supervised UMAP in 3D\n(Training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
