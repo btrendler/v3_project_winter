@@ -32,7 +32,7 @@ def generate_sample(size_per, set_name="train_patients", random_state=42):
     return np.array(rows, dtype=float), dataset["labels"]
 
 
-# Convert a sample to X and y pairs, with numberic values in the place of NaNs
+# Convert a sample to X and y pairs, with numeric values in the place of NaNs
 def to_xy_numeric(sample, labels):
     dep_col_idx = np.where(labels == DEP_COL)[0]
     X = np.delete(sample, dep_col_idx, axis=1)
