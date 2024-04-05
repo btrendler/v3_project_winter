@@ -172,6 +172,19 @@ def make_4d_plot(file_in, y_file_in, title, dimensions):
     plt.show()
 
 
+# Plot the result of a clustering test
+def plot_result(X, y):
+    dims = X.shape[1]
+    if dims == 2:
+        plt.scatter(*X.T, c=y, cmap="rainbow", marker=".", alpha=0.7)
+        plt.show()
+    else:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.scatter(*X.T, c=y, cmap="rainbow", marker=".", alpha=0.7)
+        plt.show()
+
+
 if __name__ == "__main__":
     SIZE_FACTOR = 2
     #make_projections()
