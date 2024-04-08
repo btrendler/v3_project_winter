@@ -129,12 +129,12 @@ if __name__ == "__main__":
     test_size = min(X_valid.shape[0], X_test.shape[0])
     umc = UMAPClassifier(
         *data_train,
-        n_neighbors=90,
+        n_neighbors=60,
         input_length=test_size,
         max_candidates=40,
         verbose=True,
-        umap_kwargs={"n_components": 8, "init": "pca", "n_epochs": 30, "target_weight": .7},
-        rfc_kwargs={"max_depth": 7, "max_features": .5, "min_samples_leaf": 10, "n_estimators": 60}
+        umap_kwargs={"n_components": 8, "init": "pca", "n_epochs": 100, "target_weight": .95},
+        rfc_kwargs={"criterion": "gini", "max_depth": 7, "max_features": .5, "min_samples_leaf": 10, "n_estimators": 60}
     )
 
     # Compute the score
