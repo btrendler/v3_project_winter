@@ -213,9 +213,9 @@ if __name__ == "__main__":
     #
     # # Make the 3D UMAP figures
     make_3d_plot("umap_unsup_3d", "y_part", "UMAP, 3D Unsupervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_3d_plot("umap_sup_3d_def", "y_part", "UMAP, 3D Supervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_3d_plot("umap_sup_3d_def", "y_part", "UMAP, 3D Supervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
     # make_3d_plot("umap_sup_3d_grid", "y_part", "Supervised UMAP in 3D\n(10% of training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    # make_3d_plot("umap_sup_3d_def_full", "y_full", "Supervised UMAP in 3D\n(Training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    make_3d_plot("umap_sup_3d_def_full", "y_full", "UMAP, 3D Supervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
     # make_3d_plot("umap_sup_3d_grid_full", "y_full", "Supervised UMAP in 3D\n(Training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
     # make_3d_plot("umap_sup_3d_def_test", "y_test", "Supervised UMAP in 3D\n(Test data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
     # make_3d_plot("umap_sup_3d_grid_test", "y_test", "Supervised UMAP in 3D\n(Test data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
