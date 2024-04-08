@@ -8,6 +8,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from matplotlib import pyplot as plt
+plt.rcParams['figure.dpi'] = 350
 
 DEP_COL = "_HYPNO-mode"
 
@@ -114,7 +115,9 @@ def make_2d_group_plot(files_in, y_file_in, file_out, suptitle, titles, dimensio
     for i, (x, title) in enumerate(zip(X, titles)):
         plt.subplot(*shape, i + 1)
         plt.title(title)
-        plt.scatter(*x.T, c=y, cmap="rainbow", marker=".")
+        plt.scatter(*x.T, c=y, cmap="rainbow", marker=".", s=0.2)
+        plt.axis("off")
+        plt.gca().set_aspect("equal")
     plt.suptitle(suptitle)
     plt.tight_layout()
     plt.savefig(f"figures/proj-{file_out}.png")
@@ -129,7 +132,9 @@ def make_2d_plot(file_in, y_file_in, title, dimensions):
     # Make the scatter plot and save to the file
     plt.figure(figsize=dimensions)
     plt.title(title)
-    plt.scatter(*X.T, c=y, cmap="rainbow", marker=".")
+    plt.scatter(*X.T, c=y, cmap="rainbow", marker=".", s=0.6)
+    plt.axis("off")
+    plt.gca().set_aspect("equal")
     plt.tight_layout()
     plt.savefig(f"figures/proj-{file_in}.png")
     plt.show()
@@ -141,12 +146,15 @@ def make_3d_plot(file_in, y_file_in, title, dimensions):
     y = np.load(f"projections/{y_file_in}.npy")
 
     # Make the scatter plot and save to the file
-    fig = plt.figure(figsize=dimensions)
+    fig = plt.figure(figsize=dimensions, constrained_layout=True)
     ax = fig.add_subplot(projection='3d')
-    ax.scatter(*X.T, c=y, cmap="rainbow", marker=".")
+    ax.scatter(*X.T, c=y, cmap="rainbow", marker=".", s=0.6)
+    ax.get_xaxis().set_ticks([])
+    ax.get_yaxis().set_ticks([])
+    ax.get_zaxis().set_ticks([])
     plt.title(title)
     plt.tight_layout()
-    plt.savefig(f"figures/proj-{file_in}.png")
+    plt.savefig(f"figures/proj-{file_in}.png", bbox_inches="tight")
     plt.show()
 
 
@@ -186,32 +194,32 @@ def plot_result(X, y):
 
 
 if __name__ == "__main__":
-    SIZE_FACTOR = 2
+    SIZE_FACTOR = 1.75
     #make_projections()
 
     # Make the TSNE plot
     perps = [2, 5, 10, 30, 50, 100]
     make_2d_group_plot([f"tsne_perp{p}" for p in perps], "y_part", "tsne",
-                       ''"TSNE Trained on 10% of the Test Data", [f"Perplexity: {p}" for p in perps], (SIZE_FACTOR * 3, SIZE_FACTOR * 2), (2, 3))
+                       "TSNE, 2D", [f"Perplexity: {p}" for p in perps], (SIZE_FACTOR * 3, SIZE_FACTOR * 2), (2, 3))
 
     # Make the 2D UMAP figures
-    make_2d_plot("umap_unsup_2d", "y_part", "Unsupervised UMAP in 2D\n(10% of training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_2d_plot("umap_sup_2d_def", "y_part", "Supervised UMAP in 2D\n(10% of training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_2d_plot("umap_sup_2d_grid", "y_part", "Supervised UMAP in 2D\n(10% of training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_2d_plot("umap_sup_2d_def_full", "y_full", "Supervised UMAP in 2D\n(Training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_2d_plot("umap_sup_2d_grid_full", "y_full", "Supervised UMAP in 2D\n(Training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_2d_plot("umap_sup_2d_def_test", "y_test", "Supervised UMAP in 2D\n(Test data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_2d_plot("umap_sup_2d_grid_test", "y_test", "Supervised UMAP in 2D\n(Test data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-
-    # Make the 3D UMAP figures
-    make_3d_plot("umap_unsup_3d", "y_part", "Unsupervised UMAP in 3D\n(50 neighbors, default params)\n(10% of training data)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_3d_plot("umap_sup_3d_def", "y_part", "Supervised UMAP in 3D\n(10% of training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_3d_plot("umap_sup_3d_grid", "y_part", "Supervised UMAP in 3D\n(10% of training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_3d_plot("umap_sup_3d_def_full", "y_full", "Supervised UMAP in 3D\n(Training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_3d_plot("umap_sup_3d_grid_full", "y_full", "Supervised UMAP in 3D\n(Training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_3d_plot("umap_sup_3d_def_test", "y_test", "Supervised UMAP in 3D\n(Test data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-    make_3d_plot("umap_sup_3d_grid_test", "y_test", "Supervised UMAP in 3D\n(Test data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
-
-    # Make the 4D UMAP figure
-    make_4d_plot("umap_sup_4d_grid", "y_part", "Supervised UMAP into 4D\n(using parameters found via GridSearch)",
-                (15, 5))
+    make_2d_plot("umap_unsup_2d", "y_part", "UMAP, 2D Unsupervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    make_2d_plot("umap_sup_2d_def", "y_part", "UMAP, 2D Supervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_2d_plot("umap_sup_2d_grid", "y_part", "Supervised UMAP in 2D\n(10% of training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_2d_plot("umap_sup_2d_def_full", "y_full", "Supervised UMAP in 2D\n(Training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    make_2d_plot("umap_sup_2d_grid_full", "y_full", "UMAP, 2D Supervised (Optimized)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_2d_plot("umap_sup_2d_def_test", "y_test", "Supervised UMAP in 2D\n(Test data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_2d_plot("umap_sup_2d_grid_test", "y_test", None, (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    #
+    # # Make the 3D UMAP figures
+    make_3d_plot("umap_unsup_3d", "y_part", "UMAP, 3D Unsupervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    make_3d_plot("umap_sup_3d_def", "y_part", "UMAP, 3D Supervised", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_3d_plot("umap_sup_3d_grid", "y_part", "Supervised UMAP in 3D\n(10% of training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_3d_plot("umap_sup_3d_def_full", "y_full", "Supervised UMAP in 3D\n(Training data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_3d_plot("umap_sup_3d_grid_full", "y_full", "Supervised UMAP in 3D\n(Training data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_3d_plot("umap_sup_3d_def_test", "y_test", "Supervised UMAP in 3D\n(Test data, 50 neighbors, default params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    # make_3d_plot("umap_sup_3d_grid_test", "y_test", "Supervised UMAP in 3D\n(Test data, grid-searched params)", (SIZE_FACTOR * 2, SIZE_FACTOR * 2))
+    #
+    # # Make the 4D UMAP figure
+    # make_4d_plot("umap_sup_4d_grid", "y_part", "Supervised UMAP into 4D\n(using parameters found via GridSearch)",
+    #             (15, 5))
