@@ -20,6 +20,9 @@ sleep studies and may help create hardware which can identify a user’s sleep
 state in real time, to help improve our understanding of the sleep states and
 their purposes, especially those with sleeping disorders.
 
+## Important Files
+The bulk of the data cleaning was done in *parser.py* and *aggregator.py*.
+
 ## File Structure
 animations -- various visualizations of the brainwaves over time for patients 4001 and 4111.
 
