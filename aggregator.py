@@ -24,8 +24,8 @@ BLOCK_LENGTH = 30.
 # Note: every column MUST have an aggregator specified, or it will not be passed through to the final data.
 PROCESSORS = [
     # ("zeros", 15)
-    ("fourier_seg", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL"], 40),
-    ("fourier_seg", ["EMG SUBMENTAL"], 5),
+    ("fourier_seg", ["EEG FPZ-CZ", "EEG PZ-OZ", "EOG HORIZONTAL"], 300),
+    ("fourier_seg", ["EMG SUBMENTAL"], 30),
     ("mean", ["RESP ORO-NASAL", "TEMP RECTAL"]),
     ("mode", ["_HYPNO"])
 ]
@@ -34,7 +34,7 @@ DEPENDENT_LABEL = "_HYPNO"
 # How to handle data blocks where the dependent variable takes multiple values; valid options are 'withhold', 'ignore'
 # DEPENDENT_CHANGE_METHOD = "withhold"
 # Input and output file names
-OUT_FILE_NAME = lambda n: f"sc-agg-f16.npz"
+OUT_FILE_NAME = lambda n: f"sc-agg-f16-veryhighdim.npz"
 IN_FILE_NAME = "sleep-cassette.npz"
 # Labels for entries in the npz file
 IN_FILE_KEYS_LIST = "patients"

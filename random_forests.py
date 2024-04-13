@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore")
 DEP_COL = "_HYPNO-mode"
 
 # Utility functions to load in the data
-dataset = np.load("sc-agg-f16.npz")
+dataset = np.load("sc-agg-f16-veryhighdim.npz")
 
 
 # Create a reproducible sample of rows from the given set
@@ -46,18 +46,18 @@ data_test_ = to_xy_numeric(*generate_sample(1., set_name="test_patients", random
 
 
 if __name__ == "__main__":
-    gs = RandomForestClassifier(n_jobs=-1, criterion="gini", max_depth=7, max_features=0.5, min_samples_leaf=10, n_estimators=60)
-    # gs = GridSearchCV(rfc, {
-    #     "n_estimators": [60, 80, 100, 120, 140],
-    #     "max_depth": [3,4,5,6,7],
-    #     "min_samples_leaf": [3,5,10],
-    #     "max_features": ["sqrt", "log2", .5],
-    #     "criterion": ["gini", "entropy", "log_loss"]
-    # }, verbose=10, n_jobs=-1)
+    rfc = RandomForestClassifier() #n_jobs=-1, criterion="gini", max_depth=7, max_features=0.5, min_samples_leaf=10, n_estimators=60)
+    gs = GridSearchCV(rfc, {
+        "n_estimators": [100, 120, 140], # 80, 120
+        "max_depth": [7, 9, 11], #4, 6
+        "min_samples_leaf": [5, 15], # 5
+        "max_features": ["sqrt", .5], # .5
+        "criterion": ["gini"]
+    }, verbose=10, n_jobs=-1, cv=2)
     # gs.fit(*data_train)
-    print("Fitting complete:")
     gs.fit(*data_train)
-    # print(gs.best_params_)
-    # print(gs.best_score_)
+    print("Fitting complete:")
+    print(gs.best_params_)
+    print(gs.best_score_)
     print(gs.score(*data_valid))
     print(gs.score(*data_test_))
