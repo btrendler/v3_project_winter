@@ -1,0 +1,5 @@
+(n, p_thin, erdos_c, gamma, rho, sigma, alpha) score
+mse_thinned: (50, 0.2, 4, 10, 10, 10, 0.01), 996.7922061033771
+mse_connected: (50, 0.2, 4, 10, 5, 10, 0.01), 996.7922061033771
+vpt_thinned: (50, 0.2, 3, 1, 1, 0.01, 0.01), 0.0
+vpt_connected: (50, 0.2, 3, 1, 1, 0.01, 0.01), 0.0
