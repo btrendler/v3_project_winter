@@ -22,8 +22,13 @@ their purposes, especially those with sleeping disorders.
 
 ## Important Files
 The bulk of the data cleaning was done in **parser.py** and **aggregator.py**.
+
 **nathan-modeling.py** contains the data on Kalman filtering and Softmax classification.
+
 **reservoir_computing.ipynb** contains the code responsible for reservoir computing.
+
+**umap_classifier.py**, **clustering.ipynb** and **clustering_2.ipynb** are responsible
+for UMAP and various classification techniques.
 
 
 ## File Structure
