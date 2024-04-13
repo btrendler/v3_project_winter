@@ -27,4 +27,7 @@ figures -- figures used in the paper.
 
 projections -- the projected data from using tsne and umap
 
-reservoir_gridsearch_results -- 
+aggregator.py -- used for aggregating the data -- takes the data from all patients and converts
+it to several numpy arrays that are ready for forier analysis.
+
+
