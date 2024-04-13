@@ -20,8 +20,56 @@ sleep studies and may help create hardware which can identify a user’s sleep
 state in real time, to help improve our understanding of the sleep states and
 their purposes, especially those with sleeping disorders.
 
+## Important Files
+The bulk of the data cleaning was done in **parser.py** and **aggregator.py**.
+
+**nathan-modeling.py** contains the data on Kalman filtering and Softmax classification.
+
+**reservoir_computing.ipynb** contains the code responsible for reservoir computing.
+
+**umap_classifier.py**, **clustering.ipynb** and **clustering_2.ipynb** are responsible
+for UMAP and various classification techniques.
+
+
 ## File Structure
 animations -- various visualizations of the brainwaves over time for patients 4001 and 4111.
+
 figures -- figures used in the paper.
+
 projections -- the projected data from using tsne and umap
-reservoir_gridsearch_results -- 
+
+aggregator.py -- used for aggregating the data -- performs fft and separates the data to train, 
+test, and validation sets.
+
+assignment .ipynb -- looks at clustering via UMAP and random forest classifier.
+
+clustering.ipynb -- k-means, gmm, and rfc gridsearch results.
+
+clustering_2.ipynb -- several UMAP clusterings
+
+clustering_figures.py -- used to generate plots 
+
+deep_learning.ipynb -- a deep learning network (not used in the paper)
+
+fancy_alternative.ipynb -- an alternative to running UMAP on unseen data by 
+including data as unlabeled data into UMAP
+
+nathan-data-exploration.ipynb -- used for understanding the dataset
+and generating preliminary plots
+
+nathan-fourier-exploration-modeling.ipynb -- fft exploration and softmax classification
+
+nathan-modeling -- main exploration of kalman filtering and softmax classification
+
+parameter_comparison.py -- exploration of various parameters for UMAP
+
+parser.py -- converts the edf files to one npz file
+
+random_forests.py -- grid search for random forest
+
+reservoir_computing.py -- a walkthrough of reservoir computing
+
+reservoir_gridsearch.py -- finding optimal parameters for reservoir computing
+
+
+

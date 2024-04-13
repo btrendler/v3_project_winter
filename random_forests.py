@@ -44,9 +44,13 @@ data_train = to_xy_numeric(*generate_sample(1., random_state=1919))
 data_valid = to_xy_numeric(*generate_sample(1., set_name="validate_patients", random_state=19))
 data_test_ = to_xy_numeric(*generate_sample(1., set_name="test_patients", random_state=19))
 
+# Best parameters for 64-dimensional data
+# (n_jobs=-1, criterion="gini", max_depth=7, max_features=0.5, min_samples_leaf=10, n_estimators=60)
+# Best parameters for very-high-dimensional data
+# {'criterion': 'gini', 'max_depth': 11, 'max_features': 0.5, 'min_samples_leaf': 15, 'n_estimators': 100}
 
 if __name__ == "__main__":
-    rfc = RandomForestClassifier() #n_jobs=-1, criterion="gini", max_depth=7, max_features=0.5, min_samples_leaf=10, n_estimators=60)
+    rfc = RandomForestClassifier()
     gs = GridSearchCV(rfc, {
         "n_estimators": [100, 120, 140], # 80, 120
         "max_depth": [7, 9, 11], #4, 6
