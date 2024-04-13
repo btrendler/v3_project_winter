@@ -21,7 +21,10 @@ state in real time, to help improve our understanding of the sleep states and
 their purposes, especially those with sleeping disorders.
 
 ## Important Files
-The bulk of the data cleaning was done in *parser.py* and *aggregator.py*.
+The bulk of the data cleaning was done in **parser.py** and **aggregator.py**.
+**nathan-modeling.py** contains the data on Kalman filtering and Softmax classification.
+**reservoir_computing.ipynb** contains the code responsible for reservoir computing.
+
 
 ## File Structure
 animations -- various visualizations of the brainwaves over time for patients 4001 and 4111.
