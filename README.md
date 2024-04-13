@@ -22,6 +22,9 @@ their purposes, especially those with sleeping disorders.
 
 ## File Structure
 animations -- various visualizations of the brainwaves over time for patients 4001 and 4111.
+
 figures -- figures used in the paper.
+
 projections -- the projected data from using tsne and umap
+
 reservoir_gridsearch_results -- 
